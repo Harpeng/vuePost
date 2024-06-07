@@ -4,6 +4,7 @@ import components from './components/UI/index'
 import router from './router/router'
 import Vintersection from './components/directives/Vintersection'
 import directives from './components/directives'
+import store from './store'
 
 const app = createApp(App)
 
@@ -15,4 +16,4 @@ directives.forEach((directive) => {
   app.directive(directive.name, directive)
 })
 
-app.use(router).mount('#app')
+app.use(router).use(store).mount('#app')
