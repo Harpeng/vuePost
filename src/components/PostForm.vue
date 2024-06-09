@@ -1,9 +1,9 @@
 <template>
-  <form @submit.prevent class="form">
+  <form @submit.prevent="createPost" class="form">
     <h4>Создание поста</h4>
     <my-input v-focus v-model="post.title" class="input" type="text" placeholder="Название" />
     <my-input v-model="post.body" class="input" type="text" placeholder="Описание" />
-    <my-button class="btn-form" @click="createPost">Создать</my-button>
+    <my-button class="btn-form" type="submit">Создать</my-button>
   </form>
 </template>
 
