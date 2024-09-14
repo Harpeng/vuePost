@@ -11,18 +11,22 @@
     </my-dialog>
     <post-list :posts="sortedAndSearchedPosts" @remove="removePost" v-if="!isPostLoading" />
     <div v-else>Идет загрузка...</div>
-    <div v-intersection="loadMorePosts" class="observe"></div>
-    <!-- погинация <div class="page__wrapper">
+    <!-- <div v-intersection="loadMorePosts" class="observe"></div> -->
+    <div class="page__navigation">
+      <button class="btn__loadmore" @click="loadMore">показать еще</button>
+      <div class="page__wrapper">
         <div
           class="page"
-          v-for="pageNumber in totalPages"
-          :key="pageNumber"
+          v-for="(pageNumber, index) in paginationPage"
+          :key="pageNumber === '...' ? 'elipsis' + index : pageNumber"
           :class="{ 'current-page': page === pageNumber }"
           @click="changePage(pageNumber)"
         >
-          {{ pageNumber }}
+         <p v-if="pageNumber !== '...'" class="page__number">{{ pageNumber }}</p>
+         <span v-else class="page__elipsis">...</span>
         </div>
-      </div> -->
+      </div>
+    </div>
   </div>
 </template>
 <script>
@@ -44,6 +48,7 @@ export default {
       selectedSort: '',
       page: 1,
       totalPages: 0,
+      offset: 0,
       limit: 10,
       sortOptions: [
         { value: 'title', name: 'По названию' },
@@ -62,14 +67,18 @@ export default {
     showDialog() {
       this.dialogVisible = true
     },
-    // пагинация changePage(pageNumber) {
-    //   this.page = pageNumber
-    // },
+    changePage(pageNumber) {
+      if (pageNumber !== '...') {
+        this.page = pageNumber;
+        this.fetchPosts();
+      }
+    },
     async fetchPosts() {
       try {
         this.isPostLoading = true
         const response = await axios.get('https://jsonplaceholder.typicode.com/posts', {
           params: {
+            _start: this.offset,
             _page: this.page,
             _limit: this.limit
           }
@@ -83,17 +92,21 @@ export default {
         this.isPostLoading = false
       }
     },
-    async loadMorePosts() {
+    async loadMore() {
       try {
-        this.page += 1
+        this.page += 1;
+        this.offset = (this.page - 1) * this.limit;
+
         const response = await axios.get('https://jsonplaceholder.typicode.com/posts', {
           params: {
+            _start: this.offset,
             _page: this.page,
             _limit: this.limit
           }
         })
         this.totalPages = Math.ceil(response.headers['x-total-count'] / this.limit)
         this.posts = [...this.posts, ...response.data]
+        console.log('dfdf', this.offset)
       } catch (e) {
         console.log(e)
       }
@@ -101,6 +114,7 @@ export default {
   },
   mounted() {
     this.fetchPosts()
+    console.log(this.paginationPage)
 
     // const options = {
     //   rootMargin: '0px',
@@ -117,6 +131,23 @@ export default {
     // observer.observe(this.$refs.observer)
   },
   computed: {
+    paginationPage() {
+      if (this.totalPages < 5) {
+        return this.totalPages;
+      }
+
+      const pages = [];
+
+      if (this.page < 4) {
+        pages.push(1, 2, 3, 4,'...', this.totalPages);
+      } else if (this.page >= this.totalPages - 3) {
+        pages.push(1,'...', this.totalPages - 3, this.totalPages - 2, this.totalPages - 1, this.totalPages);
+      } else {
+        pages.push(1, '...', this.page - 1, this.page, this.page + 1, '...', this.totalPages)
+      }
+
+      return pages;
+    },
     sortedPosts() {
       return [...this.posts].sort((post1, post2) =>
         post1[this.selectedSort]?.localeCompare(post2[this.selectedSort])
@@ -127,12 +158,12 @@ export default {
         post.title.toLowerCase().includes(this.searchQuery.toLowerCase())
       )
     }
+  },
+  watch: {
+    page() {
+      console.log('hey')
+    }
   }
-  //пагинация  watch: {
-  //   page() {
-  //     this.fetchPosts()
-  //   }
-  // }
 }
 </script>
 <style>
@@ -158,5 +189,12 @@ export default {
 
 .current-page {
   border: 2px solid teal;
+}
+
+.page__navigation {
+  padding: 40px 0 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 </style>
